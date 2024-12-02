@@ -16,9 +16,9 @@ func init() {
 }
 
 func Solve(input *input.Input, log *slog.Logger) int {
-	var err error
+	var result := 0
 	for l := range input.AugmentedLineStream() {
 		log.Info(l.T)
 	}
-	return 0
+	return result
 }
