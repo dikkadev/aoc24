@@ -5,8 +5,8 @@ package day
 import (
 	"log/slog"
 
-	"github.com/dikkadev/aoc21/days"
-	"github.com/dikkadev/aoc21/input"
+	"github.com/dikkadev/aoc24/days"
+	"github.com/dikkadev/aoc24/input"
 )
 
 const DAY = 0
@@ -16,12 +16,12 @@ func init() {
 }
 
 func Solve(input *input.Input, log *slog.Logger) int {
-	var result := 0
+	result := 0
 	for l := range input.AugmentedLineStream() {
 		if len(l.T) == 0 {
 			continue
 		}
-		log.Info(l.T)
+		slog.Debug(l.T)
 	}
 	return result
 }
