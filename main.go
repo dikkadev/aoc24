@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/dikkadev/aoc24/days/01"
 	_ "github.com/dikkadev/aoc24/days/02"
+	_ "github.com/dikkadev/aoc24/days/03"
 )
 
 var (
