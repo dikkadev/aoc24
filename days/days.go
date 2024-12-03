@@ -21,7 +21,7 @@ type Day struct {
 	logger *slog.Logger
 }
 
-var Days = make([]*Day, 24, 24)
+var Days = make([]*Day, 25, 25)
 
 func RegisterDay(number uint, solver Solver) error {
 	if d := Days[number]; d != nil {
