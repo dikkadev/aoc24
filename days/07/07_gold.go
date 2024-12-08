@@ -38,8 +38,6 @@ func Solve(input *input.Input, log *slog.Logger) int {
 type Equation struct {
 	Value    int
 	Operands []int
-
-	register int
 }
 
 func ParseEquation(s string) *Equation {

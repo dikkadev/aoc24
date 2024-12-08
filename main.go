@@ -14,6 +14,7 @@ import (
 	_ "github.com/dikkadev/aoc24/days/05"
 	_ "github.com/dikkadev/aoc24/days/06"
 	_ "github.com/dikkadev/aoc24/days/07"
+	_ "github.com/dikkadev/aoc24/days/08"
 )
 
 var (
