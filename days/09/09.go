@@ -1,3 +1,5 @@
+// +build exclude
+
 package day
 
 import (
@@ -23,47 +25,60 @@ func Solve(input *input.Input, log *slog.Logger) int {
 		}
 		slog.Debug(l.T)
 	}
-	disk := ParseDisk(input.Lines()[0])
-	// slog.Debug("", "disk", fmt.Sprintf("%#v", disk))
-	slog.Debug("", "disk", disk.String())
+	d := ParseDisk(input.Lines()[0])
+	slog.Debug("", "disk", d.String())
+
+	for {
+		lastFileBlock := d.LastFile()
+		if lastFileBlock == -1 {
+			panic("got no more file blocks?")
+		}
+		firstFreeBlock := d.FirstFree()
+		if firstFreeBlock == -1 {
+			break
+		}
+		if firstFreeBlock > lastFileBlock {
+			break
+		}
+		d.MoveBlock(lastFileBlock, firstFreeBlock)
+		slog.Debug("", "disk", d.String())
+	}
+
+	for i, b := range d.Data {
+		if b.T == FREE {
+			continue
+		}
+		result += i * b.ID
+	}
 
 	return result
 }
 
-type Element interface {
-	String() string
+type BlockType int
+
+const (
+	FREE BlockType = iota
+	FILE
+)
+
+type Block struct {
+	T  BlockType
+	ID int
 }
 
-type Free struct {
-	Size int
-}
-
-func (f Free) String() string {
-	s := ""
-	for i := 0; i < f.Size; i++ {
-		s += "."
+func (b *Block) String() string {
+	switch b.T {
+	case FREE:
+		return "."
+	case FILE:
+		return strconv.Itoa(b.ID)
+	default:
+		return " "
 	}
-
-	return s
-}
-
-type File struct {
-	ID   int
-	Size int
-}
-
-func (f File) String() string {
-	s := ""
-	for i := 0; i < f.Size; i++ {
-		x := strconv.Itoa(f.ID)
-		s += x
-	}
-
-	return s
 }
 
 type Disk struct {
-	Data []Element
+	Data []Block
 }
 
 func (d *Disk) String() string {
@@ -75,7 +90,8 @@ func (d *Disk) String() string {
 }
 
 func ParseDisk(inp string) Disk {
-	data := make([]Element, 0)
+	inp = strings.TrimSpace(inp)
+	data := make([]Block, 0)
 
 	fileId := 0
 	for i, r := range inp {
@@ -85,19 +101,50 @@ func ParseDisk(inp string) Disk {
 			panic(err)
 		}
 		if isFile {
-			data = append(data, File{
-				ID:   fileId,
-				Size: size,
-			})
+			for j := 0; j < size; j++ {
+				data = append(data, Block{
+					T:  FILE,
+					ID: fileId,
+				})
+			}
 			fileId++
 		} else {
-			data = append(data, Free{
-				Size: size,
-			})
+			for j := 0; j < size; j++ {
+				data = append(data, Block{
+					T: FREE,
+				})
+			}
 		}
 	}
 
+	slog.Info("Parsed full disk")
+
 	return Disk{
 		Data: data,
+	}
+}
+
+func (d *Disk) FirstFree() int {
+	for i, e := range d.Data {
+		if e.T == FREE {
+			return i
+		}
+	}
+	return -1
+}
+
+func (d *Disk) LastFile() int {
+	for i := len(d.Data) - 1; i >= 0; i-- {
+		if d.Data[i].T == FILE {
+			return i
+		}
+	}
+	return -1
+}
+
+func (d *Disk) MoveBlock(from, to int) {
+	d.Data[to] = d.Data[from]
+	d.Data[from] = Block{
+		T: FREE,
 	}
 }
