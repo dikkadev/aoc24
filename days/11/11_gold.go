@@ -1,13 +1,9 @@
 package day
 
 import (
-	"bufio"
-	"fmt"
 	"log/slog"
-	"os"
-	"path/filepath"
+	"strconv"
 	"strings"
-	"time"
 
 	"github.com/dikkadev/aoc24/days"
 	"github.com/dikkadev/aoc24/input"
@@ -15,98 +11,21 @@ import (
 
 const DAY = 11
 
-// We'll keep the current stones in a file on disk, to avoid huge RAM usage.
-// Each stone is a line in the file.
-// On each blink, we read line by line, process, and write to a new file.
-// This is slow but should control memory usage.
-
-func multiplyBy2024(numStr string) string {
-	const factor = 2024
-	digits := make([]int, len(numStr))
-	for i, c := range numStr {
-		digits[i] = int(c - '0')
+func Blink(rock int) []int {
+	if rock == 0 {
+		return []int{1}
 	}
-
-	carry := 0
-	for i := len(digits) - 1; i >= 0; i-- {
-		res := digits[i]*factor + carry
-		digits[i] = res % 10
-		carry = res / 10
+	strRock := strconv.Itoa(rock)
+	length := len(strRock)
+	if length%2 == 0 {
+		// even number of digits
+		rock1, _ := strconv.Atoi(strRock[:length/2])
+		rock2, _ := strconv.Atoi(strRock[length/2:])
+		return []int{rock1, rock2}
+	} else {
+		// odd number of digits
+		return []int{2024 * rock}
 	}
-
-	for carry > 0 {
-		digits = append([]int{carry % 10}, digits...)
-		carry /= 10
-	}
-
-	var sb strings.Builder
-	for _, d := range digits {
-		sb.WriteByte(byte('0' + d))
-	}
-	return sb.String()
-}
-
-func splitEvenDigits(numStr string) (string, string) {
-	half := len(numStr) / 2
-	left := strings.TrimLeft(numStr[:half], "0")
-	right := strings.TrimLeft(numStr[half:], "0")
-
-	if left == "" {
-		left = "0"
-	}
-	if right == "" {
-		right = "0"
-	}
-	return left, right
-}
-
-func blinkFile(inFile, outFile string) (int, error) {
-	inF, err := os.Open(inFile)
-	if err != nil {
-		return 0, err
-	}
-	defer inF.Close()
-
-	outF, err := os.Create(outFile)
-	if err != nil {
-		return 0, err
-	}
-	defer outF.Close()
-
-	sc := bufio.NewScanner(inF)
-	bw := bufio.NewWriter(outF)
-
-	count := 0
-	for sc.Scan() {
-		stone := sc.Text()
-		if stone == "0" {
-			bw.WriteString("1\n")
-			count++
-			continue
-		}
-
-		length := len(stone)
-		if length%2 == 0 {
-			left, right := splitEvenDigits(stone)
-			bw.WriteString(left + "\n")
-			bw.WriteString(right + "\n")
-			count += 2
-		} else {
-			newVal := multiplyBy2024(stone)
-			bw.WriteString(newVal + "\n")
-			count++
-		}
-	}
-
-	if err := sc.Err(); err != nil {
-		return 0, err
-	}
-
-	if err := bw.Flush(); err != nil {
-		return 0, err
-	}
-
-	return count, nil
 }
 
 func init() {
@@ -116,43 +35,46 @@ func init() {
 func Solve(input *input.Input, log *slog.Logger) int {
 	fields := strings.Fields(input.Lines()[0])
 
-	// Create a temp directory for stone files
-	tmpDir, err := os.MkdirTemp("", "stones")
-	if err != nil {
-		log.Error("failed to create temp dir", "error", err)
-		return -1
+	// Part 1: direct simulation for 25 iterations
+	var rocks []int
+	for _, f := range fields {
+		n, _ := strconv.Atoi(f)
+		rocks = append(rocks, n)
 	}
-	defer os.RemoveAll(tmpDir) // cleanup
-
-	currentFile := filepath.Join(tmpDir, "stones_0.txt")
-	{
-		f, err := os.Create(currentFile)
-		if err != nil {
-			log.Error("failed to create initial file", "error", err)
-			return -1
+	for i := 0; i < 25; i++ {
+		newRocks := make([]int, 0, len(rocks)*2) // capacity hint
+		for _, r := range rocks {
+			newRocks = append(newRocks, Blink(r)...)
 		}
-		for _, fld := range fields {
-			f.WriteString(fld + "\n")
-		}
-		f.Close()
+		rocks = newRocks
 	}
+	answer1 := len(rocks)
 
-	pre := time.Now()
-	N := 75 // we ultimately want iteration 75
-	var count int
-	for i := 1; i <= N; i++ {
-		nextFile := filepath.Join(tmpDir, fmt.Sprintf("stones_%d.txt", i))
-		count, err = blinkFile(currentFile, nextFile)
-		if err != nil {
-			log.Error("error blinking", "iteration", i, "error", err)
-			return -1
-		}
-		log.Info("progress", "iteration", i, "count", count, "duration", time.Since(pre))
-		os.Remove(currentFile)
-		currentFile = nextFile
+	// Part 2: use a counting approach for 75 iterations
+	// reinitialize from original input
+	countMap := make(map[int]int)
+	for _, f := range fields {
+		n, _ := strconv.Atoi(f)
+		countMap[n]++
 	}
 
-	return count
+	for i := 0; i < 75; i++ {
+		newMap := make(map[int]int)
+		for number, count := range countMap {
+			results := Blink(number)
+			for _, r := range results {
+				newMap[r] += count
+			}
+		}
+		countMap = newMap
+	}
+	answer2 := 0
+	for _, c := range countMap {
+		answer2 += c
+	}
+
+	log.Info("answers", "part1", answer1, "part2", answer2)
+	return answer2
 }
 
 // package day
