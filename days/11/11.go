@@ -1,4 +1,4 @@
-// +build exclude
+//go:build exclude
 
 package day
 
@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/dikkadev/aoc24/days"
 	"github.com/dikkadev/aoc24/input"
@@ -69,10 +70,12 @@ func Solve(input *input.Input, log *slog.Logger) int {
 		}
 	}
 
+	pre := time.Now()
 	N := 25
 	for i := 0; i < N; i++ {
 		blink()
 		slog.Debug("", "N", i, "stones", stones)
+		slog.Info("", "blink", i, "stones count", len(stones), "duration", time.Since(pre))
 	}
 	result = len(stones)
 

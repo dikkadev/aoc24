@@ -63,6 +63,10 @@ func (d *Day) PrepeareInputs() error {
 	return nil
 }
 
+func (d *Day) SetLogger(logger *slog.Logger) {
+	d.logger = logger
+}
+
 func (d *Day) Solve(small bool) int {
 	var input *input.Input
 	if small {

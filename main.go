@@ -3,6 +3,10 @@ package main
 import (
 	"flag"
 	"log/slog"
+	"os"
+	"runtime/pprof"
+
+	_ "net/http/pprof"
 
 	"github.com/dikkadev/aoc24/days"
 	"github.com/dikkadev/prettyslog"
@@ -17,6 +21,7 @@ import (
 	_ "github.com/dikkadev/aoc24/days/08"
 	_ "github.com/dikkadev/aoc24/days/09"
 	_ "github.com/dikkadev/aoc24/days/10"
+	_ "github.com/dikkadev/aoc24/days/11"
 )
 
 var (
@@ -36,16 +41,35 @@ func main() {
 	if small {
 		handler := prettyslog.NewPrettyslogHandler("AOC", prettyslog.WithLevel(slog.LevelDebug))
 		slog.SetDefault(slog.New(handler))
+
+		for _, d := range days.Days {
+			if d != nil {
+				d.SetLogger(slog.New(handler))
+			}
+		}
 	}
 
 	slog.Info("Starting")
+
+	f, err := os.Create("cpu.prof")
+	if err != nil {
+		slog.Error("Could not create CPU profile", "error", err)
+		return
+	}
+	defer f.Close()
+	if err := pprof.StartCPUProfile(f); err != nil {
+		slog.Error("Could not start CPU profile", "error", err)
+		return
+	}
+	defer pprof.StopCPUProfile()
+
 	day := days.Days[dayNumber]
 	if day == nil {
 		slog.Error("Day not found", "day", dayNumber)
 		return
 	}
 
-	err := day.PrepeareInputs()
+	err = day.PrepeareInputs()
 	if err != nil {
 		slog.Error("Failed to prepare inputs", "error", err)
 		return
